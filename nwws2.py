@@ -156,20 +156,13 @@ if __name__ == '__main__':
         # Setup the MUCBot and register plugins. Note that while plugins may
         # have interdependencies, the order in which you register them does
         # not matter.
-        xmpp = MUCBot(config['username'] + '@nwws-oi.weather.gov', config['password'], 'nwws@conference.nwws-oi.weather.gov', config['resource'])
+        xmpp = MUCBot(config['username'] + '@nwws-oi.weather.gov/' + config['resource'], config['password'], 'nwws@conference.nwws-oi.weather.gov', config['username'])
         xmpp.register_plugin('xep_0030') # Service Discovery
         xmpp.register_plugin('xep_0045') # Multi-User Chat
         xmpp.register_plugin('xep_0199') # XMPP Ping
 
         # Connect to the XMPP server and start processing XMPP stanzas.
         if xmpp.connect():
-            # If you do not have the dnspython library installed, you will need
-            # to manually specify the name of the server if it does not match
-            # the one in the JID. For example, to use Google Talk you would
-            # need to use:
-            #
-            # if xmpp.connect(('talk.google.com', 5222)):
-            #     ...
             xmpp.process(block=True)
             if os.path.isfile('/tmp/exit_nwws2'):
                os.remove('/tmp/exit_nwws2')
