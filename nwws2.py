@@ -8,6 +8,7 @@ import logging
 import json
 import time
 import sleekxmpp
+import re
 from datetime import datetime
 from xml.dom import minidom
 
@@ -86,40 +87,52 @@ class MUCBot(sleekxmpp.ClientXMPP):
                    for stanza objects and the Message stanza to see
                    how it may be used.
         """
-	print msg['body']
-	xmldoc = minidom.parseString(str(msg));
-	itemlist = xmldoc.getElementsByTagName('x')
-	ttaaii = itemlist[0].attributes['ttaaii'].value.lower()
-	cccc = itemlist[0].attributes['cccc'].value.lower()
-	awipsid = itemlist[0].attributes['awipsid'].value.lower()
-	id = itemlist[0].attributes['id'].value.lower()
-	content = itemlist[0].firstChild.nodeValue
-	if awipsid:
-	   dayhourmin = datetime.utcnow().strftime("%d%H%M")
-	   id = id.replace('.', '')
-	   filename = cccc + '_' + ttaaii + '-' + awipsid + '.' + dayhourmin + '_' + id[-6:] + '.txt'
-	   #print("INFO\t Writing " + filename)
-	   if not os.path.exists(config['archivedir'] + '/' + cccc):
-	      os.makedirs(config['archivedir'] + '/' + cccc)
-	   # Remove every other line
-	   lines = content.splitlines()
-	   pathtofile = config['archivedir'] + '/' + cccc + '/' + filename
-	   f = open(pathtofile, 'w')
-	   count = 0
-	   for line in lines:
-	      if count == 0 and line == '':
-		 continue
-	      if count % 2 == 0:
-	         f.write(line + "\n")
-	      count += 1
-	   f.close()
-	   # Run a command using the file as the parameter (if pan_run is defined in the config file)
-	   if config.has_key('pan_run'):
-	      try:
-	         os.system(config['pan_run']+' '+pathtofile+' >/dev/null')
-	      except OSError as e:
-		 print >>sys.stderr, "ERROR    Execution failed:", e
+        xmldoc = minidom.parseString(str(msg));
+        itemlist = xmldoc.getElementsByTagName('x')
+        ttaaii = itemlist[0].attributes['ttaaii'].value.lower()
+        cccc = itemlist[0].attributes['cccc'].value.lower()
+        awipsid = itemlist[0].attributes['awipsid'].value.lower()
+        id = itemlist[0].attributes['id'].value.lower()
+        content = itemlist[0].firstChild.nodeValue
+        wmofiltermatch = False
+        if awipsid:
+            if 'wmofilter' in config:
+                pypatterns = [re.sub('/', '', i) for i in config['wmofilter']]
+                for i in pypatterns:
+                    if re.search(i, ttaaii):
+                        wmofiltermatch = True
+            else:
+                wmofiltermatch = True
 
+            if wmofiltermatch:
+                print(msg['body'])
+                dayhourmin = datetime.utcnow().strftime("%d%H%M")
+                id = id.replace('.', '')
+                filename = cccc + '_' + ttaaii + '-' + awipsid + '.' + dayhourmin + '_' + id[-6:] + '.txt'
+                #print("INFO\t Writing " + filename)
+                if not os.path.exists(config['archivedir'] + '/' + cccc):
+                    os.makedirs(config['archivedir'] + '/' + cccc)
+                # Remove every other line
+                lines = content.splitlines()
+                pathtofile = config['archivedir'] + '/' + cccc + '/' + filename
+                f = open(pathtofile, 'w')
+                count = 0
+                for line in lines:
+                    if count == 0 and line == '':
+                        continue
+                    if count % 2 == 0:
+                        f.write(line + "\n")
+                    count += 1
+                f.close()
+                # Run a command using the file as the parameter (if pan_run is defined in the config file)
+                if 'pan_run' in config:
+                    try:
+                        os.system(config['pan_run']+' '+pathtofile+' >/dev/null')
+                    except OSError as e:
+                        print >>sys.stderr, "ERROR    Execution failed:", e
+            else:
+                trash = 1 + 1
+                print("Skipped WMO header " + ttaaii + " from " + cccc)
 
 if __name__ == '__main__':
     # Check for command line arguments
