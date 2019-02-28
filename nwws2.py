@@ -72,11 +72,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
         """
         self.get_roster()
         self.send_presence()
-        self.plugin['xep_0045'].joinMUC(self.room,
-                                        self.nick,
-                                        # If a room password is needed, use:
-                                        # password=the_room_password,
-                                        wait=True)
+        self.plugin['xep_0045'].joinMUC(self.room, self.nick)
 
     def muc_message(self, msg):
         """
