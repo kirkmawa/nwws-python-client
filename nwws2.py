@@ -11,6 +11,7 @@ import sleekxmpp
 import re
 from datetime import datetime
 from xml.dom import minidom
+from azure.storage.blob import BlockBlobService
 
 # Python versions before 3.0 do not use UTF-8 encoding
 # by default. To ensure that Unicode is handled properly
@@ -130,6 +131,13 @@ class MUCBot(sleekxmpp.ClientXMPP):
                         os.system(config['pan_run']+' '+pathtofile+' >/dev/null')
                     except OSError as e:
                         print >>sys.stderr, "ERROR    Execution failed:", e
+                
+                if 'azureblob' in config:
+                    block_blob_service = BlockBlobService(account_name=config['azureblob']['azure_account_name'], account_key=config['azureblob']['azure_account_key'])
+                    try:
+                        block_blob_service.create_blob_from_path(config['azureblob']['container_name'], filename, pathtofile)
+                    except Exception as e:
+                        print(e)
             else:
                 trash = 1 + 1
                 print("Skipped WMO header " + ttaaii + " from " + cccc)
